@@ -18,7 +18,7 @@ If a control in this project does not trace back to a threat listed here, it is 
 
 ## 1. What are we building?
 
-A pipeline and a local Kubernetes cluster that only run software whose security evidence is signed and verified. The workload is a small FastAPI service with a PostgreSQL database, in two versions: deliberately `vulnerable` and `hardened`.
+A pipeline and a local Kubernetes cluster that only run software whose security evidence is signed and verified. The workload is a small **expense-claims API** ([ADR-0005](adr/0005-expense-claims-api-as-the-workload.md)): employees submit claims, managers approve or reject them, and finance pays them. It is one FastAPI service with a PostgreSQL database, in two versions: deliberately `vulnerable` and `hardened`.
 
 ```mermaid
 flowchart LR

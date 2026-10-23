@@ -4,13 +4,13 @@ Eleven chapters, each one a working snapshot you can check out and run. Every ch
 
 ## The story in one paragraph
 
-A small team ships a web service. It has the usual flaws: an injectable query, a hard-coded secret, a container running as root. Chapter by chapter we add the gates that catch each flaw, then go further: we sign what passed, teach the cluster to refuse anything unsigned, and finally attack our own pipeline to show the cluster still holds. By the end, "the tests passed" is no longer a claim. It is signed evidence the cluster checks for itself.
+A small team ships an expense-claims service: employees submit claims, managers approve them, finance pays. It has the usual flaws: an injectable query, a hard-coded secret, a container running as root. Chapter by chapter we add the gates that catch each flaw, then go further: we sign what passed, teach the cluster to refuse anything unsigned, and finally attack our own pipeline to show the cluster still holds. By the end, "the tests passed" is no longer a claim. It is signed evidence the cluster checks for itself.
 
 ## Chapters
 
 | # | Chapter | You will see | Status |
 | --- | --- | --- | --- |
-| 0 | [Setup and threat model](ch-00-setup-and-threat-model.md) | A 3-node cluster on your laptop, and the attacks we plan to stop | In progress |
+| 0 | [Setup and threat model](ch-00-setup-and-threat-model.md) | A 3-node cluster on your laptop, and the attacks we plan to stop | Done |
 | 1 | Meet the vulnerable app | SQL injection and data theft, done by hand | Planned |
 | 2 | Secrets and code gates | The vulnerable branch blocked before it builds | Planned |
 | 3 | Dependencies, images, SBOM | A known CVE and a root container flagged | Planned |

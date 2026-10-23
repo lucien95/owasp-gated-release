@@ -2,12 +2,15 @@
 
 A learning-first DevSecOps reference lab. A deliberately vulnerable service is stopped by OWASP-aligned gates; the hardened version is signed, policy-approved, and deployed; and the cluster refuses anything without signed evidence, including attempts to bypass the pipeline itself.
 
-> **Status: Chapter 0 (setup and threat model) is in progress. Nothing in this repository is implemented yet unless the chapter table below says so.**
-> Evidence level: E1, designed but not built.
+> **Status: Chapter 0 is done: a local three-node cluster, rebuilt on demand, and a threat model of 21 threats. The application is not built yet; Chapter 1 is next.**
 
 ## The problem
 
 Most pipelines scan code. Far fewer can prove that what runs in the cluster is exactly what passed those scans, and fewer still defend the pipeline itself against attack. This lab builds both, in small chapters anyone can follow.
+
+## The application
+
+An **expense-claims API**: employees submit claims, managers approve them, finance pays them. It was chosen because every OWASP Top 10:2025 category arises naturally from its features. Money gives attackers an obvious motive, and anyone can understand why approving your own claim is a problem ([ADR-0005](docs/adr/0005-expense-claims-api-as-the-workload.md)).
 
 ## What it will demonstrate (planned)
 
@@ -19,7 +22,7 @@ Most pipelines scan code. Far fewer can prove that what runs in the cluster is e
 
 | Chapter | Topic | Status |
 | --- | --- | --- |
-| 0 | Setup and threat model | In progress |
+| 0 | Setup and threat model | **Done** (`ch-00`) |
 | 1 | Meet the vulnerable app | Planned |
 | 2 | Secrets and code gates | Planned |
 | 3 | Dependencies, images, SBOM | Planned |
@@ -37,6 +40,7 @@ Each finished chapter becomes a Git tag (`ch-00` … `ch-10`) that you can check
 
 - [Documentation standard](docs/DOCUMENTATION_STANDARD.md): how every step, decision, and screenshot is recorded
 - [Architecture Decision Records](docs/adr/): every significant decision, with the rejected alternatives
+- [Threat model](docs/threat-model.md): what we protect, from whom, and the chapter that addresses each threat
 - [Build log](docs/BUILD_LOG.md): what happened in each working session, including what broke
 - [The course](docs/learn/README.md): the story and step-by-step chapter pages, written as each chapter is built
 

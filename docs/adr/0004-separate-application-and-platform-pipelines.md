@@ -1,8 +1,8 @@
 # ADR-0004: Separate application and platform pipelines; Argo CD applies both
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-10-22
-- **Decided by:** Pending Lucien Tanyi
+- **Decided by:** Lucien Tanyi
 
 ## Context
 
@@ -18,7 +18,7 @@ The repository holds two kinds of change: application code (`apps/`), which beco
 
 ## Decision
 
-Option B, proposed.
+Option B.
 
 ## Why
 

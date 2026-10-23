@@ -1,6 +1,6 @@
 # Chapter 0: Setup and threat model
 
-> **Status:** In progress
+> **Status:** Done (tag `ch-00`)
 > **Time:** about 2 hours · **Cost:** $0 · **You will need:** a Mac or Linux laptop with 16 GB of RAM or more, Docker, Homebrew (on macOS), and a GitHub account
 
 ## Goal
@@ -154,6 +154,25 @@ How to study it, in this order:
 
 Evidence: [`docs/threat-model.md`](../threat-model.md), v0.1: 8 assets, 7 threat actors, 7 trust boundaries, 21 threats, each mapped to OWASP Top 10:2025 or the OWASP CI/CD Top 10 and to the chapter that will address it. All controls are *planned*; T01 is partly in place.
 
+## Break it, catch it, fix it, prove it
+
+Chapter 0 has no application yet, so its version of this sequence happened to the repository itself:
+
+1. **Break it:** the first commit was pushed to a public repository without the secret scan, because the hook was never installed.
+2. **Catch it:** reviewing the setup showed `.git/hooks/pre-commit` did not exist.
+3. **Fix it:** `pre-commit install` (Step 1).
+4. **Prove it:** `pre-commit run --all-files` scanned every published file and passed, and every later commit shows `Detect hardcoded secrets....Passed`.
+
+## Decisions and tradeoffs
+
+| Decision | Chosen | Rejected | Why | ADR |
+| --- | --- | --- | --- | --- |
+| Project shape | One flagship: OWASP gates plus a signed release gate | Two separate projects; a classic OWASP pipeline alone | Together they show something few portfolios do: the cluster refusing anything without signed evidence | [0001](../adr/0001-one-flagship-release-gate-and-owasp-pipeline.md) |
+| Where documentation lives | Markdown in this repository | An external documentation tool | Docs are versioned and tagged with the code they describe | [0002](../adr/0002-documentation-as-code-in-the-repo.md) |
+| Where the cluster runs | kind on a laptop, $0 | A managed cloud cluster | Free, reproducible by anyone, and full control for cluster-level security | [0003](../adr/0003-local-kind-cluster-not-managed-cloud.md) |
+| Pipelines | Separate application and platform pipelines; Argo CD applies | One pipeline; CI pushing to the cluster | Smaller blast radius, least privilege, and no cluster credentials in CI | [0004](../adr/0004-separate-application-and-platform-pipelines.md) |
+| The workload | An expense-claims API | A notes app; a change-approval API | All ten OWASP categories arise naturally, and newcomers instantly understand the motive | [0005](../adr/0005-expense-claims-api-as-the-workload.md) |
+
 ## What broke
 
 1. **The commit message never closed.** The `git commit -m "...` line was missing its closing quote, so the shell showed `dquote>` and kept waiting, swallowing the next commands into the message. Fix: press `Ctrl + C`, then run one command per line. Any `dquote>` or `quote>` prompt means an open quote.
@@ -168,6 +187,10 @@ Evidence: [`docs/threat-model.md`](../threat-model.md), v0.1: 8 assets, 7 threat
 - [x] `make down` then `make up` rebuilds the cluster from the repository alone
 - [x] `docs/threat-model.md` lists at least five abuse cases (21 threats in v0.1)
 
+## Not yet verified
+
+- **A clean clone has not been tested.** The rebuild in Step 4 used the author's existing checkout. A fresh `git clone` on another machine is scheduled before the v1.0 release.
+
 ## Check your understanding
 
 1. Why does installing a pre-commit hook not protect commits that were already pushed?
@@ -175,6 +198,12 @@ Evidence: [`docs/threat-model.md`](../threat-model.md), v0.1: 8 assets, 7 threat
 3. In the threat model, why is the signing identity (A3) as valuable to an attacker as write access to `main` (A4)?
 4. Threat T21 says the security gate itself can fail. If the signature check is down and production is broken, should deploys be blocked or allowed? What does each choice cost?
 
+## Clean up
+
+```bash
+make down   # deletes the cluster; make up brings it back in about a minute
+```
+
 ## Next
 
-Chapter 1: Meet the vulnerable app
+Chapter 1: Meet the vulnerable app, the expense-claims API in its vulnerable form, attacked by hand.

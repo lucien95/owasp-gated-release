@@ -1,8 +1,8 @@
 # ADR-0002: Keep all documentation and evidence in this repository
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-10-22
-- **Decided by:** Pending review by Lucien Tanyi
+- **Decided by:** Lucien Tanyi
 
 ## Context
 
