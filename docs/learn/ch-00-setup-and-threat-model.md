@@ -145,7 +145,14 @@ Why: before building anything, write down what we are protecting, from whom, and
 
 The result is [`docs/threat-model.md`](../threat-model.md). It is a living document: each later chapter links the threats it addresses back to it.
 
-Evidence: *in progress*
+How to study it, in this order:
+
+1. **The diagram.** Trace each arrow and ask: who is on each side, and do they trust each other?
+2. **The assets table.** For each asset, ask: if an attacker had only this, what could they do?
+3. **One boundary at a time.** Read TB4 first. It is the heart of this project: the point where the cluster decides whether to trust an image.
+4. **Out of scope.** Notice what is deliberately not defended, and why. Honest limits are a sign of a serious threat model, not a weak one.
+
+Evidence: [`docs/threat-model.md`](../threat-model.md), v0.1: 8 assets, 7 threat actors, 7 trust boundaries, 21 threats, each mapped to OWASP Top 10:2025 or the OWASP CI/CD Top 10 and to the chapter that will address it. All controls are *planned*; T01 is partly in place.
 
 ## What broke
 
@@ -159,12 +166,14 @@ Evidence: *in progress*
 - [x] Tool versions are recorded
 - [x] `kubectl get nodes` shows 3 nodes in `Ready` state
 - [x] `make down` then `make up` rebuilds the cluster from the repository alone
-- [ ] `docs/threat-model.md` lists at least five abuse cases
+- [x] `docs/threat-model.md` lists at least five abuse cases (21 threats in v0.1)
 
 ## Check your understanding
 
 1. Why does installing a pre-commit hook not protect commits that were already pushed?
 2. A teammate clones this repository. Is the hook active on their machine? What would make it active?
+3. In the threat model, why is the signing identity (A3) as valuable to an attacker as write access to `main` (A4)?
+4. Threat T21 says the security gate itself can fail. If the signature check is down and production is broken, should deploys be blocked or allowed? What does each choice cost?
 
 ## Next
 
