@@ -18,6 +18,8 @@ One entry per working session, newest first. What we set out to do, what happene
 
 **Evidence:** none yet. No code has run.
 
-**What broke:** nothing yet.
+**What broke**
+- The commit command was missing its closing quote, so the shell waited at `dquote>` and absorbed the next commands into the message. Fixed with `Ctrl + C` and one command per line.
+- `pre-commit install` was skipped, so the first commit was pushed **without** the Gitleaks scan. Nothing secret was in it, but the protection was not in place. Chapter 0, Step 1 installs the hook and scans every existing file.
 
-**Next:** Chapter 0. Install the tools, create the kind cluster, capture the first evidence, and draft the threat model.
+**Next:** Chapter 0, starting with Step 1 (install the hook and scan what is already published). Then install the tools, create the kind cluster, capture the first evidence, and draft the threat model.

@@ -31,4 +31,4 @@ Option B was the fastest route to a strong result. Revisit if the local cluster 
 ## Consequences
 
 - Scope must be controlled with chapters, each ending in a tag and evidence.
-- The repository starts public from the first commit, so secret scanning runs from commit one.
+- The repository is public from the first commit, so secret scanning must guard every commit. (The first commit was pushed before the hook was installed; see [Chapter 0, What broke](../learn/ch-00-setup-and-threat-model.md#what-broke).)

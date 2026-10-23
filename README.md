@@ -38,7 +38,7 @@ Each finished chapter becomes a Git tag (`ch-00` … `ch-10`) that you can check
 - [Documentation standard](docs/DOCUMENTATION_STANDARD.md): how every step, decision, and screenshot is recorded
 - [Architecture Decision Records](docs/adr/): every significant decision, with the rejected alternatives
 - [Build log](docs/BUILD_LOG.md): what happened in each working session, including what broke
-- [Chapter guides](docs/learn/): step-by-step pages for learners (written as each chapter is built)
+- [The course](docs/learn/README.md): the story and step-by-step chapter pages, written as each chapter is built
 
 ## Run it
 

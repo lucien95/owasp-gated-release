@@ -1,0 +1,4 @@
+docker: 28.5.1
+kind v0.33.0 go1.27.0 darwin/arm64
+Client Version: v1.37.1
+Kustomize Version: v5.8.1

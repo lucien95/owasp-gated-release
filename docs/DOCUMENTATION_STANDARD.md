@@ -71,3 +71,28 @@ Example: `docs/evidence/ch-05/05-04-kyverno-refuses-unsigned-image.png`
 
 - **Lucien** runs every command, takes screenshots, makes and approves decisions, and reviews each page against the newcomer test.
 - **Claude** explains concepts and tradeoffs, drafts pages from real captured output, reviews for gaps and accuracy, and flags any claim that evidence doesn't support yet.
+
+## One source, every channel
+
+The chapter page in `docs/learn/` is the single source of truth. Everything published elsewhere is derived from it after the chapter is finished, so no channel ever claims more than the repository proves.
+
+| Channel | What it gets | When |
+| --- | --- | --- |
+| GitHub | The chapter page, evidence, ADRs, and the `ch-NN` tag | As the chapter is built |
+| LinkedIn | One post per chapter: the "refusal moment", one screenshot, one lesson, link to the chapter | After the chapter's tag |
+| Medium / Substack | One long-form article per two chapters: the story, the decisions, what broke | After every second chapter |
+| YouTube | One walkthrough per chapter (5–10 min), and Shorts cut from the refusal recordings | After the chapter, from recordings made during the build |
+
+### Recording during the build
+
+Video cannot be recreated well afterwards, so moments worth filming are marked in each chapter with **[Record]** and filmed when they happen:
+
+- Terminal sessions: `asciinema rec docs/evidence/_inbox/<name>.cast` (text-based, small, replayable), or macOS `Cmd + Shift + 5` → **Record Selected Portion**
+- Browser and UI moments: `Cmd + Shift + 5` → **Record Selected Portion**
+- Keep each clip under 2 minutes, one idea per clip
+- Recordings go through the same redaction checklist as screenshots
+
+### Voice
+
+- Chapter steps speak to the reader: "Run this. You should see this."
+- The build story ("What broke", the build log, articles) is first person, written only from what actually happened and confirmed by the author.
