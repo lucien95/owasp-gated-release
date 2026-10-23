@@ -1,0 +1,32 @@
+# Raw screenshots wait here until they are reviewed and redacted (see docs/evidence/README.md)
+docs/evidence/_inbox/
+
+# Secrets and local configuration: never commit
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+kubeconfig*
+*.kubeconfig
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store

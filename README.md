@@ -1,0 +1,55 @@
+# OWASP-Gated Release
+
+A learning-first DevSecOps reference lab. A deliberately vulnerable service is stopped by OWASP-aligned gates; the hardened version is signed, policy-approved, and deployed; and the cluster refuses anything without signed evidence, including attempts to bypass the pipeline itself.
+
+> **Status: Chapter 0 (setup and threat model) is in progress. Nothing in this repository is implemented yet unless the chapter table below says so.**
+> Evidence level: E1, designed but not built.
+
+## The problem
+
+Most pipelines scan code. Far fewer can prove that what runs in the cluster is exactly what passed those scans, and fewer still defend the pipeline itself against attack. This lab builds both, in small chapters anyone can follow.
+
+## What it will demonstrate (planned)
+
+1. A vulnerable FastAPI service is pushed: every gate catches its planted OWASP Top 10:2025 flaws, and it never reaches the cluster.
+2. The hardened service is pushed: it passes, its evidence is signed, and Argo CD deploys it.
+3. The pipeline is attacked (a poisoned fork pull request, a hand-built image, an over-scoped token), mapped to the OWASP Top 10 CI/CD Security Risks. The cluster still refuses, because it trusts signed evidence rather than the pipeline's word.
+
+## Chapters
+
+| Chapter | Topic | Status |
+| --- | --- | --- |
+| 0 | Setup and threat model | In progress |
+| 1 | Meet the vulnerable app | Planned |
+| 2 | Secrets and code gates | Planned |
+| 3 | Dependencies, images, SBOM | Planned |
+| 4 | Harden the cluster | Planned |
+| 5 | Sign and prove | Planned |
+| 6 | The release decision and GitOps | Planned |
+| 7 | Test the running app (DAST) | Planned |
+| 8 | Attack the pipeline | Planned |
+| 9 | Observe and operate | Planned |
+| 10 | Runtime detection (optional) | Planned |
+
+Each finished chapter becomes a Git tag (`ch-00` … `ch-10`) that you can check out and run on its own.
+
+## How this project is documented
+
+- [Documentation standard](docs/DOCUMENTATION_STANDARD.md): how every step, decision, and screenshot is recorded
+- [Architecture Decision Records](docs/adr/): every significant decision, with the rejected alternatives
+- [Build log](docs/BUILD_LOG.md): what happened in each working session, including what broke
+- [Chapter guides](docs/learn/): step-by-step pages for learners (written as each chapter is built)
+
+## Run it
+
+Not yet. Chapter 0 adds `make up`, which creates a local cluster on your laptop. No cloud account and no cost.
+
+## Scope and honesty
+
+- An independent laboratory on a local kind cluster. No production users, no real traffic, and no employer code or information.
+- Measurements are labelled as lab results. Simulated incidents and synthetic traffic are labelled as such.
+- Planted vulnerabilities are illustrative. Real applications fail in messier ways.
+
+## License
+
+[MIT](LICENSE)
