@@ -1,8 +1,8 @@
 # ADR-0007: Run the pipeline on both versions; the vulnerable app is a known-bad test fixture
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-10-22
-- **Decided by:** Pending Lucien Tanyi
+- **Decided by:** Lucien Tanyi
 
 ## Context
 
@@ -18,7 +18,7 @@ Security gates are only trustworthy if we can show they catch what they claim to
 
 ## Decision
 
-Option C, proposed. Like pressing the test button on a smoke alarm, the vulnerable app is a known-bad sample the gates must detect every time.
+Option C. Like pressing the test button on a smoke alarm, the vulnerable app is a known-bad sample the gates must detect every time.
 
 ## Why
 

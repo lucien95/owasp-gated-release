@@ -11,7 +11,7 @@ A small team ships an expense-claims service: employees submit claims, managers 
 | # | Chapter | You will see | Status |
 | --- | --- | --- | --- |
 | 0 | [Setup and threat model](ch-00-setup-and-threat-model.md) | A 3-node cluster on your laptop, and the attacks we plan to stop | Done |
-| 1 | Meet the vulnerable app | SQL injection and data theft, done by hand | Planned |
+| 1 | [Meet the vulnerable app](ch-01-meet-the-vulnerable-app.md) | Ten OWASP attacks done by hand, and a pipeline that stays green anyway | In progress |
 | 2 | Secrets and code gates | The vulnerable branch blocked before it builds | Planned |
 | 3 | Dependencies, images, SBOM | A known CVE and a root container flagged | Planned |
 | 4 | Harden the cluster | A privileged pod rejected at the door | Planned |
