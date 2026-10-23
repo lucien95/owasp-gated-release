@@ -11,7 +11,7 @@ help: ## Show available commands
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  make %-8s %s\n", $$1, $$2}'
 
 up: ## Create the local cluster (does nothing if it already exists)
-	@if kind get clusters | grep -qx "$(CLUSTER)"; then \
+	@if kind get clusters 2>/dev/null | grep -qx "$(CLUSTER)"; then \
 		echo "Cluster '$(CLUSTER)' already exists. Nothing to do."; \
 	else \
 		kind create cluster --config $(KIND_CONFIG); \

@@ -1,0 +1,3 @@
+kind delete cluster --name owasp-gated-release
+Deleting cluster "owasp-gated-release" ...
+Deleted nodes: ["owasp-gated-release-control-plane" "owasp-gated-release-worker2" "owasp-gated-release-worker"]

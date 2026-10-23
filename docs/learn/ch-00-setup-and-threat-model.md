@@ -117,23 +117,48 @@ make status 2>&1 | tee docs/evidence/ch-00/00-04-make-status.txt
 
 Expected result: `make help` lists `up`, `down`, and `status`. `make down` prints `Deleting cluster "owasp-gated-release" ...`. `make up` recreates the cluster and ends with three lines saying each node `condition met`. `make status` shows three `Ready` nodes again, with a new `AGE`.
 
-Evidence: *pending*
+Evidence: the cluster was deleted ([raw](../evidence/ch-00/00-04-make-down.txt)), rebuilt from the repository ([raw](../evidence/ch-00/00-04-make-up.txt)), and is healthy again ([raw](../evidence/ch-00/00-04-make-status.txt)).
+
+![make down deletes all three nodes](../evidence/ch-00/00-04-make-down.png)
+
+![make up recreates the cluster and waits until every node reports condition met](../evidence/ch-00/00-04-make-up.png)
+
+![make status: three Ready nodes, ages 36s and 21s, a brand-new cluster](../evidence/ch-00/00-04-make-status.png)
+
+The ages (`36s`, `21s`) prove this is a new cluster, not the one from Step 3. Notice too that the node IP addresses changed: anything that depends on a fixed IP inside the cluster would have broken. That is why later chapters refer to services by name, never by IP.
 
 ### Step 5: Write the threat model
 
-*Planned. Written when we do it.*
+Why: before building anything, write down what we are protecting, from whom, and how. Every gate in later chapters must trace back to a threat listed here. If a control does not answer a threat on this list, it is decoration.
+
+**The four questions.** Threat modelling sounds formal, but at its core it is four questions:
+
+1. What are we building?
+2. What can go wrong?
+3. What are we going to do about it?
+4. Did we do a good job?
+
+**Two tools that help answer question 2:**
+
+- **Trust boundaries** are the lines where data or control passes between parties that trust each other differently: your laptop and GitHub, a stranger's pull request and your pipeline, the registry and the cluster, the internet and the app. Attacks happen at these lines, so that is where we look.
+- **STRIDE** is a checklist of six kinds of threat to ask about at each boundary: **S**poofing (pretending to be someone), **T**ampering (changing something), **R**epudiation (denying you did something), **I**nformation disclosure (leaking), **D**enial of service (breaking availability), and **E**levation of privilege (gaining powers you should not have).
+
+The result is [`docs/threat-model.md`](../threat-model.md). It is a living document: each later chapter links the threats it addresses back to it.
+
+Evidence: *in progress*
 
 ## What broke
 
 1. **The commit message never closed.** The `git commit -m "...` line was missing its closing quote, so the shell showed `dquote>` and kept waiting, swallowing the next commands into the message. Fix: press `Ctrl + C`, then run one command per line. Any `dquote>` or `quote>` prompt means an open quote.
 2. **The first commit was pushed without the secret scan.** `pre-commit install` was skipped, so the hook never ran on the first commit. Nothing secret was in it, but the protection we claimed was not in place. Fix: Step 1 installs the hook and scans every existing file.
+3. **`make up` printed `No kind clusters found.`** The Makefile checks whether the cluster already exists by running `kind get clusters`, and when there are none, kind prints that message to the error stream, which `2>&1 | tee` then captured. It was harmless noise, but noise in evidence makes readers wonder what went wrong. Fix: the check now discards that message (`kind get clusters 2>/dev/null`).
 
 ## Checkpoint
 
 - [x] `pre-commit run --all-files` passes
 - [x] Tool versions are recorded
 - [x] `kubectl get nodes` shows 3 nodes in `Ready` state
-- [ ] `make down` then `make up` rebuilds the cluster from the repository alone
+- [x] `make down` then `make up` rebuilds the cluster from the repository alone
 - [ ] `docs/threat-model.md` lists at least five abuse cases
 
 ## Check your understanding
