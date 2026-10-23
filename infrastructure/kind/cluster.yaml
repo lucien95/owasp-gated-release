@@ -1,0 +1,11 @@
+# A three-node local Kubernetes cluster for this course.
+# One control plane (runs the Kubernetes API) and two workers (run our pods).
+# Two workers, not one, so scheduling, node failure and network policy behave
+# like a real cluster instead of everything landing on a single machine.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: owasp-gated-release
+nodes:
+  - role: control-plane
+  - role: worker
+  - role: worker

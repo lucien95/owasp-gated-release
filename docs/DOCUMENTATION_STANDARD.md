@@ -24,10 +24,13 @@ This project is documented as it is built, so that a newcomer with a laptop and 
 
 ## Evidence types: which one to use
 
+The policy is **hybrid**: the raw text file is always the proof; rendered images make it readable; real screenshots and screen recordings show the moments that matter.
+
 | Type | Use it for | Why |
 | --- | --- | --- |
 | **Text capture** (default) | Terminal output: commands, scan results, `kubectl` output, refusals | Searchable, diffable, small, and a reader can copy it |
 | **Screenshot** | Things that only exist in a UI: GitHub Security tab, Argo CD, Grafana, ZAP reports | The only way to show them |
+| **Rendered terminal image** | Terminal moments worth showing in articles and posts | Generated from the captured `.txt` file, so the image can never differ from the real output; each one is captioned "Rendered from captured output" and links its raw file |
 | **Short recording** (GIF or asciinema, 30 s or less) | Key moments: a deploy being refused, an alert firing | The "watch it happen" proof for readers and videos |
 
 Text capture example (the `tee` saves output while you still see it):
@@ -83,14 +86,9 @@ The chapter page in `docs/learn/` is the single source of truth. Everything publ
 | Medium / Substack | One long-form article per two chapters: the story, the decisions, what broke | After every second chapter |
 | YouTube | One walkthrough per chapter (5–10 min), and Shorts cut from the refusal recordings | After the chapter, from recordings made during the build |
 
-### Recording during the build
+### Recordings
 
-Video cannot be recreated well afterwards, so moments worth filming are marked in each chapter with **[Record]** and filmed when they happen:
-
-- Terminal sessions: `asciinema rec docs/evidence/_inbox/<name>.cast` (text-based, small, replayable), or macOS `Cmd + Shift + 5` → **Record Selected Portion**
-- Browser and UI moments: `Cmd + Shift + 5` → **Record Selected Portion**
-- Keep each clip under 2 minutes, one idea per clip
-- Recordings go through the same redaction checklist as screenshots
+Key moments are screen-recorded while they happen, because video cannot be recreated honestly afterwards. Raw footage is kept outside Git (video files are large, and anything committed stays in the repository's history forever); published videos are linked from the chapter pages.
 
 ### Voice
 

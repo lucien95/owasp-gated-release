@@ -30,3 +30,7 @@ crash.log
 .vscode/
 .idea/
 .DS_Store
+
+# Screen recordings: large binaries never go into Git history.
+# Raw footage lives here locally; published videos are linked from the chapter pages.
+media/

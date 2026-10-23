@@ -41,7 +41,11 @@ pre-commit installed at .git/hooks/pre-commit
 Detect hardcoded secrets.................................................Passed
 ```
 
-Evidence: *pending*
+Evidence: Gitleaks scanned every file in the repository and found nothing ([raw output](../evidence/ch-00/00-01-gitleaks-all-files.txt)).
+
+![pre-commit run --all-files: Detect hardcoded secrets Passed](../evidence/ch-00/00-01-gitleaks-all-files.png)
+
+The first run spends a minute installing Gitleaks; later runs take about a second. From now on, every `git commit` in this repository runs this scan first.
 
 ### Step 2: Check your tools
 
@@ -54,15 +58,66 @@ brew install kind kubectl
 
 Expected result: three lines with a version for Docker, kind, and kubectl. If the Docker line shows an error, Docker Desktop (or your Docker runtime) is not running; start it and run the command again.
 
-Evidence: *pending*
+Evidence: the tool versions this course was built with ([raw output](../evidence/ch-00/00-02-tool-versions.txt)).
+
+![Docker 28.5.1, kind v0.33.0, kubectl v1.37.1](../evidence/ch-00/00-02-tool-versions.png)
+
+| Tool | Version used in this course |
+| --- | --- |
+| Docker | 28.5.1 |
+| kind | v0.33.0 |
+| kubectl (client) | v1.37.1 |
+
+Newer versions will usually work. If a later step behaves differently for you, compare against this table first.
 
 ### Step 3: Create the cluster
 
-*Planned. Written when we do it.*
+Why: every later chapter deploys into this cluster. It has three nodes: one **control plane**, which runs the Kubernetes API (the cluster's brain), and two **workers**, which run our application pods. One worker would hide behaviour we need later, such as pods spreading across machines and traffic crossing between nodes.
+
+The whole cluster is described in one file, [`infrastructure/kind/cluster.yaml`](../../infrastructure/kind/cluster.yaml), so anyone can recreate the identical cluster. Notice what is *not* in it yet: no port mappings and no extra settings. We add configuration only when a chapter needs it, and the chapter explains why.
+
+```bash
+kind create cluster --config infrastructure/kind/cluster.yaml 2>&1 | tee docs/evidence/ch-00/00-03-kind-create.txt
+kubectl get nodes -o wide 2>&1 | tee docs/evidence/ch-00/00-03-kind-nodes.txt
+```
+
+Expected result: kind prints its progress with a tick per stage (`Ensuring node image`, `Preparing nodes`, `Starting control-plane`, `Joining worker nodes`), then `kubectl get nodes` lists three nodes, `owasp-gated-release-control-plane`, `owasp-gated-release-worker`, and `owasp-gated-release-worker2`, each with status `Ready`. A node may show `NotReady` for the first 20–30 seconds while its network starts; run the second command again if so.
+
+Evidence: the cluster was created ([raw output](../evidence/ch-00/00-03-kind-create.txt)) and all three nodes reported `Ready` ([raw output](../evidence/ch-00/00-03-kind-nodes.txt)).
+
+![kind create cluster output, every stage ticked](../evidence/ch-00/00-03-kind-create.png)
+
+![kubectl get nodes: control-plane, worker, worker2 all Ready, Kubernetes v1.37.0](../evidence/ch-00/00-03-kind-nodes.png)
+
+What the output tells you:
+
+- **`Ensuring node image (kindest/node:v1.37.0)`**: each node is a Docker container started from this image, which carries Kubernetes v1.37.0. The first run downloads it; later runs reuse it.
+- **`Installing CNI`**: CNI (Container Network Interface) is the plug-in that gives every pod an IP address and lets pods on different nodes reach each other. kind installs its own default, called kindnet.
+- **`Set kubectl context to "kind-owasp-gated-release"`**: `kubectl` can talk to many clusters, and a *context* is how it knows which one. kind switched it to this cluster for you, which is why `kubectl get nodes` worked without any extra flags.
+- **`INTERNAL-IP 172.19.0.x`**: these addresses live on a private Docker network on your laptop. Nothing here is reachable from the internet.
+- **`CONTAINER-RUNTIME containerd://2.3.4`**: inside each node, containerd is what actually runs your containers.
 
 ### Step 4: One-command start and stop (`make up`, `make down`)
 
-*Planned. Written when we do it.*
+Why: a learner, or you in three months, should not need to remember flags. The [`Makefile`](../../Makefile) wraps the commands from Step 3 into short, memorable targets, and every later chapter will add its own targets to it.
+
+Two details are deliberate:
+
+- **`make up` is idempotent.** If the cluster already exists, it does nothing instead of failing. Running it twice is safe.
+- **`make up` waits until every node is `Ready`** before it returns, so the next command never races a half-started cluster.
+
+Prove the whole environment can be destroyed and rebuilt from the repository alone:
+
+```bash
+make help
+make down 2>&1 | tee docs/evidence/ch-00/00-04-make-down.txt
+make up 2>&1 | tee docs/evidence/ch-00/00-04-make-up.txt
+make status 2>&1 | tee docs/evidence/ch-00/00-04-make-status.txt
+```
+
+Expected result: `make help` lists `up`, `down`, and `status`. `make down` prints `Deleting cluster "owasp-gated-release" ...`. `make up` recreates the cluster and ends with three lines saying each node `condition met`. `make status` shows three `Ready` nodes again, with a new `AGE`.
+
+Evidence: *pending*
 
 ### Step 5: Write the threat model
 
@@ -75,9 +130,10 @@ Evidence: *pending*
 
 ## Checkpoint
 
-- [ ] `pre-commit run --all-files` passes
-- [ ] Tool versions are recorded
-- [ ] `kubectl get nodes` shows 3 nodes in `Ready` state
+- [x] `pre-commit run --all-files` passes
+- [x] Tool versions are recorded
+- [x] `kubectl get nodes` shows 3 nodes in `Ready` state
+- [ ] `make down` then `make up` rebuilds the cluster from the repository alone
 - [ ] `docs/threat-model.md` lists at least five abuse cases
 
 ## Check your understanding
