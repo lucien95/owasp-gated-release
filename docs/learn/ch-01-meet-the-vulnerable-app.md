@@ -192,7 +192,7 @@ This step is built in three parts, so that each flaw is understood before it is 
 | Part | Endpoints | Flaws planted |
 | --- | --- | --- |
 | **3a** | Login and "who am I" | A04 hard-coded signing key, A07 tokens that never expire, A10 a token check that fails open |
-| 3b | Submit, list with search, view one claim | A05 SQL injection, A01 any user can read any claim, A02 debug and CORS misconfiguration (*planned*) |
+| **3b** | Submit, list with a status filter, view one claim | A05 SQL injection, A01 any user can read any claim, A02 debug mode that leaks stack traces |
 | 3c | Approve, pay, import | A06 a manager can approve his own claim, A08 unsafe deserialization, A09 no audit log (*planned*) |
 
 #### Step 3a: Login and access tokens
@@ -266,6 +266,59 @@ Evidence:
 - The decoded payload ([raw](../evidence/ch-01/01-03a-token-payload.txt)) is `{"sub":"2","role":"employee"}`: no `exp` claim, so nothing in the token says when it stops working.
 
 > **Why the signature is redacted.** Before committing, a Gitleaks scan of the saved login response flagged it (rule `jwt`); the pre-commit hook would have blocked the commit. It was right to: this token has no expiry and is signed with the hard-coded key, so committing it would publish a credential that works for as long as the app runs. It only works against a local lab, but the habit matters more than the risk. The fix is to keep the parts that teach something (header and payload) and replace the signature, not to bypass the hook. This is also the first time the Chapter 0 secret scanner caught something real.
+
+#### Step 3b: Submitting and reading claims
+
+Why: this is the data the app exists to protect, so it is where the two most common real-world web flaws live: queries built from user input, and endpoints that check *who you are* but not *what you may touch*.
+
+**Concepts**
+
+- **SQL injection.** The database receives one string of SQL. If the code builds that string by pasting in user input, the user can write SQL, not just data. Alice is supposed to send `approved`; she sends `x' OR '1'='1`. The quote closes the string early, and `OR '1'='1'` is true for every row, so the filter "only my claims" disappears. The fix is a **parameterised query**: the SQL and the values travel to the database separately, so a value can never become code.
+- **Authentication vs authorisation.** Authentication answers *who are you?* (the token from Step 3a). Authorisation answers *are you allowed to do this?* An endpoint can get the first right and skip the second.
+- **IDOR (Insecure Direct Object Reference).** The URL `/claims/3` names an object directly. If the server returns object 3 to anyone logged in, every user can read every claim just by changing the number. It is the most common form of A01 Broken Access Control.
+- **Debug mode.** `FastAPI(debug=True)` turns any crash into a full Python stack trace sent back to the caller. Useful on a laptop; in a running service it hands an attacker your file paths, library versions and, here, the exact SQL being run.
+
+**The files**
+
+| File | What changed |
+| --- | --- |
+| `app/claims.py` | New: `POST /claims`, `GET /claims?status=`, `GET /claims/{id}`, **two planted flaws** |
+| `app/main.py` | Registers the claims endpoints, version `0.3.0`, **one planted flaw** (`debug=True`) |
+| `tests/test_claims.py` | Submitting creates a claim owned by the submitter; listing shows only your claims; the status filter works; you can view your own claim |
+
+**The planted flaws**, each marked `PLANTED FLAW`:
+
+| OWASP 2025 | What is wrong | Realistic reason it slipped in | What an attacker can do |
+| --- | --- | --- | --- |
+| A05 Injection | The status filter is pasted into the SQL with an f-string | A raw query was "faster to write" than the ORM | Read every user's claims; with more effort, read or change any table |
+| A01 Broken Access Control | `GET /claims/{id}` never checks that the claim belongs to you | The list endpoint was filtered by owner, so the view endpoint "looked" safe | Read any claim by changing the number in the URL |
+| A02 Security Misconfiguration | `debug=True` | Left on from local debugging | Make the app crash and read the stack trace, including the SQL text |
+
+**A decision worth recording: why no CORS flaw.** The original plan included a wildcard CORS policy (`Access-Control-Allow-Origin: *`) as a second A02 flaw. It was dropped. CORS controls whether a *browser* lets another website read the response, and its real danger comes from cookies that the browser attaches automatically. This API uses bearer tokens, which a browser never attaches on its own, so a wildcard here would be a scanner finding with almost no real attack behind it. Planting it would teach the wrong lesson: that every scanner finding is equally serious. Debug mode, by contrast, makes the SQL injection easier to find, which is how flaws combine in real incidents.
+
+**Notice what the tests say:** all 11 pass. `test_list_returns_only_my_claims` even checks the owner filter, and it passes, because it never sends a hostile value. A test that only uses friendly input cannot find an injection flaw.
+
+**Run it.** From `apps/vulnerable`, with the virtual environment active (stop any running server with Ctrl+C first):
+
+```bash
+pwd
+pytest -q 2>&1 | tee ../../docs/evidence/ch-01/01-03b-pytest.txt
+uvicorn app.main:app --port 8000
+```
+
+Expected: `11 passed`. Leave the server running; the flaws are attacked in Step 5, not here.
+
+Evidence:
+
+- All 11 tests passed against the real PostgreSQL container ([raw](../evidence/ch-01/01-03b-pytest.txt)), with the same `InsecureKeyLengthWarning` from Step 3a still printed and still ignored by the test run.
+- Swagger UI now shows version `0.3.0` and the three claims endpoints:
+
+  ![Swagger UI for version 0.3.0, showing POST /claims, GET /claims and GET /claims/{claim_id} under claims](../evidence/ch-01/01-03b-swagger-claims.png)
+
+**What went wrong the first time** (kept, because you may hit it too):
+
+1. **`docker compose up -d` from the repository root** failed with `no configuration file provided: not found`. Compose only reads `compose.yaml` from the current folder, and that file lives in `apps/vulnerable`. Fix: `cd apps/vulnerable`, then check with `pwd`.
+2. **`uvicorn` failed with `[Errno 48] address already in use`.** The Step 3a server was still running in another terminal, still serving version `0.2.0` without the new endpoints, because uvicorn loads the code once at startup. Find the owner of the port with `lsof -P -i :8000`, stop the row in state `LISTEN` (Ctrl+C in its terminal, or `kill <PID>`), then start the server again. Rows in other states are clients, not the server; leave them alone.
 
 4. Package it as a container and run it in the cluster (*planned*)
 5. Attack it by hand: ten OWASP categories (*planned*)
