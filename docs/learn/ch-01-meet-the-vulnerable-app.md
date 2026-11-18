@@ -191,6 +191,14 @@ Evidence:
 6. Add a basic pipeline that stays green anyway (*planned*)
 7. Start `VULNERABILITIES.md` (*planned*)
 
+## Check your understanding
+
+1. **Why is unsalted MD5 a bad way to store passwords?**
+
+   *Answer:* MD5 always turns the same password into the same hash. If two employees both use `alice123`, their hashes match, so cracking one cracks both. And because the hash never changes, attackers can look common passwords up in precomputed tables instead of cracking them; MD5 is also fast enough to try billions of guesses per second. The fix is a unique random salt per user plus a deliberately slow algorithm such as bcrypt or Argon2.
+
+   *A shape that works for any security question:* **what happens → why it is dangerous → what fixes it.**
+
 ## What broke
 
 1. **The commands ran from the wrong folder.** The first line, `cd apps/vulnerable`, was skipped, so everything ran from the repository root. `pip` reported `Could not open requirements file`, `tee` could not find the evidence folder, and `pytest` and `uvicorn` were "command not found" because nothing had been installed. The virtual environment was also created in the wrong place (`.venv` at the root; harmless, because `.gitignore` excludes it). Fix: run `pwd` before a sequence of commands, and check that it prints the folder the step expects.
