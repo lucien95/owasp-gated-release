@@ -1,0 +1,18 @@
+# Local development database only. Run: docker compose up -d
+# Not used in the cluster; Kubernetes runs its own PostgreSQL from Step 4.
+services:
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: claims
+      POSTGRES_USER: claims
+      # Local-only default for a throwaway database on your laptop.
+      # Override with: POSTGRES_PASSWORD=... docker compose up -d
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local-dev-only}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - claims-db:/var/lib/postgresql
+
+volumes:
+  claims-db:

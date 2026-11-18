@@ -96,7 +96,95 @@ Evidence: the test passed ([raw](../evidence/ch-01/01-01-pytest.txt)) and the ru
 Clicking **Try it out**, then **Execute**, sends a real request. Swagger UI also shows the equivalent `curl` command, which is a quick way to learn `curl` syntax:
 
 ![GET /health executed from Swagger UI: response code 200, body {"status": "ok"}](../evidence/ch-01/01-01-swagger-health-200.png)
-2. Add the database, users, and claims (*planned*)
+### Step 2: Add the database, users, and claims
+
+Why: an expense app without stored data has nothing to steal. This step adds PostgreSQL, the two tables, and a seed script that resets the database to a known starting state, which every attack later in the chapter relies on.
+
+**Concepts**
+
+- **PostgreSQL** is the database. It stores users and claims in tables, like spreadsheets with strict column types and rules.
+- **Docker Compose** runs supporting services from one file, [`compose.yaml`](../../apps/vulnerable/compose.yaml). One command starts a real PostgreSQL in a container, with nothing installed on your Mac. Compose is for your laptop only; the cluster runs its own database from Step 4.
+- **SQLAlchemy** is the library that connects Python to the database. Instead of writing SQL for everything, you describe each table as a Python class, called a **model**, and SQLAlchemy translates. (One endpoint in Step 3 will deliberately skip this and build raw SQL by hand. That is where the injection lives.)
+- **A foreign key** is a column that points at a row in another table. `claims.owner_id` points at `users.id`, so every claim belongs to exactly one user. `users.manager_id` points back at `users`, which is how the app knows Bob manages Alice.
+- **A seed script** wipes the database and recreates the same starting data every time. Attacks change data (an approved claim stays approved), so you need a one-command way back to the start: `python -m app.seed`.
+
+**The files**
+
+| File | Purpose |
+| --- | --- |
+| `compose.yaml` | Runs PostgreSQL 18 on your laptop, reachable only from your own machine (`127.0.0.1`) |
+| `app/db.py` | Creates the database connection. Reads the address from the `DATABASE_URL` environment variable, with a local default |
+| `app/models.py` | The `users` and `claims` tables, as Python classes |
+| `app/security.py` | Password hashing, **with the first planted flaw** (see below) |
+| `app/seed.py` | Wipes and recreates the tables, then adds 3 users and 3 claims |
+| `tests/test_seed.py` | Proves the seed produces exactly the expected starting state |
+
+**The starting data** (all synthetic):
+
+| User | Password | Role | Manager | Claims |
+| --- | --- | --- | --- | --- |
+| `bob` | `bob123` | manager | — | $1,899.00 laptop (submitted) |
+| `alice` | `alice123` | employee | bob | $42.50 taxi (submitted); $640.00 hotel (approved by bob) |
+| `carol` | `carol123` | finance | — | none |
+
+**Planted flaw: A04:2025 Cryptographic Failures.** Passwords are stored as unsalted MD5 hashes ([`app/security.py`](../../apps/vulnerable/app/security.py)). MD5 is extremely fast, which is exactly what an attacker cracking a stolen password table wants: billions of guesses per second on ordinary hardware. And with no salt (a random value mixed into each password before hashing), two users with the same password get the same hash, so cracking one cracks both. You will see the hashes for yourself at the end of this step.
+
+**Run it.** From `apps/vulnerable`, with the virtual environment active (`(.venv)` in your prompt):
+
+```bash
+pwd
+docker compose up -d 2>&1 | tee ../../docs/evidence/ch-01/01-02-compose-up.txt
+pip install -r requirements-dev.txt
+python -m app.seed 2>&1 | tee ../../docs/evidence/ch-01/01-02-seed.txt
+pytest -q 2>&1 | tee ../../docs/evidence/ch-01/01-02-pytest.txt
+```
+
+Expected: `pwd` ends in `apps/vulnerable`; Compose starts a container named like `vulnerable-db-1`; the seed prints `Seeded 3 users and 3 claims.`; pytest reports `3 passed`.
+
+**Look inside the database:**
+
+```bash
+docker compose exec db psql -U claims -d claims -c "SELECT id, username, role, manager_id, password_hash FROM users;" 2>&1 | tee ../../docs/evidence/ch-01/01-02-users.txt
+docker compose exec db psql -U claims -d claims -c "SELECT id, owner_id, amount, description, status, approved_by FROM claims;" 2>&1 | tee ../../docs/evidence/ch-01/01-02-claims.txt
+```
+
+`docker compose exec db` runs a command inside the database container; `psql` is PostgreSQL's command-line client. Look at the `password_hash` column: 32 characters of hexadecimal, the signature of MD5.
+
+**Where the database actually runs.** Containers need Linux, so Docker Desktop runs a small hidden Linux virtual machine on your Mac. The database container (`vulnerable-db-1`) lives inside it, on its own Docker network (`vulnerable_default`), separate from the kind cluster's network. The line `127.0.0.1:5432:5432` in `compose.yaml` forwards port 5432 on your Mac into the container, which is why the Python code can connect to `127.0.0.1:5432` as if PostgreSQL were installed locally. Binding to `127.0.0.1` rather than all addresses keeps the database unreachable from other machines on your Wi-Fi.
+
+Evidence:
+
+- Compose pulled the image, then created the network, the volume, and the container ([raw output](../evidence/ch-01/01-02-compose-up.txt); the last lines are the important ones):
+
+  ```text
+  Network vulnerable_default  Created
+  Volume vulnerable_claims-db  Created
+  Container vulnerable-db-1  Started
+  ```
+
+- The seed ran ([raw](../evidence/ch-01/01-02-seed.txt)): `Seeded 3 users and 3 claims.`
+- The tests passed ([raw](../evidence/ch-01/01-02-pytest.txt)): `3 passed`.
+- The users table, as an attacker who stole it would see it ([raw](../evidence/ch-01/01-02-users.txt)):
+
+  ```text
+   id | username |   role   | manager_id |          password_hash
+  ----+----------+----------+------------+----------------------------------
+    1 | bob      | manager  |            | 2acba7f51acfd4fd5102ad090fc612ee
+    2 | alice    | employee |          1 | 7abdccbea8473767e91378e37850d296
+    3 | carol    | finance  |            | 35d9b8a73dad4919a46dfed32701f481
+  ```
+
+- The claims table ([raw](../evidence/ch-01/01-02-claims.txt)). `owner_id` is the foreign key: claims 1 and 2 belong to user 2 (alice), claim 3 to user 1 (bob):
+
+  ```text
+   id | owner_id | amount  |        description         |  status   | approved_by
+  ----+----------+---------+----------------------------+-----------+-------------
+    1 |        2 |   42.50 | Taxi to client office      | submitted |
+    2 |        2 |  640.00 | Conference hotel, 2 nights | approved  |           1
+    3 |        1 | 1899.00 | New laptop                 | submitted |
+  ```
+
+**See the A04 flaw for yourself.** On macOS, `md5 -s alice123` prints `7abdccbea8473767e91378e37850d296`, exactly alice's stored hash, on any machine, every time. The same password always gives the same unsalted MD5 hash, which is why attackers can look such hashes up in precomputed tables instead of cracking them.
 3. Add the endpoints, including the planted flaws (*planned*)
 4. Package it as a container and run it in the cluster (*planned*)
 5. Attack it by hand: ten OWASP categories (*planned*)

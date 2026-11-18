@@ -1,0 +1,80 @@
+ db Pulling 
+ 8f0ed31a512f Pulling fs layer 
+ a0b9759db243 Pulling fs layer 
+ 63ede06b07d4 Pulling fs layer 
+ b90627b8f429 Pulling fs layer 
+ 2ae7d200759f Pulling fs layer 
+ b6bb37a1d892 Pulling fs layer 
+ d1838356eada Pulling fs layer 
+ 24eb2c2398c2 Pulling fs layer 
+ 79ee62bd97d1 Pulling fs layer 
+ 8f0ed31a512f Download complete 
+ d1838356eada Download complete 
+ 63ede06b07d4 Download complete 
+ 2ae7d200759f Download complete 
+ b6bb37a1d892 Download complete 
+ 24eb2c2398c2 Download complete 
+ a0b9759db243 Download complete 
+ b90627b8f429 Downloading [============>                                      ]  1.049MB/4.191MB
+ 79ee62bd97d1 Downloading [>                                                  ]  1.049MB/113MB
+ b90627b8f429 Download complete 
+ 79ee62bd97d1 Downloading [=>                                                 ]  3.146MB/113MB
+ b90627b8f429 Extracting 1 s
+ 79ee62bd97d1 Downloading [==>                                                ]  6.291MB/113MB
+ 8f0ed31a512f Pull complete 
+ d1838356eada Pull complete 
+ 2ae7d200759f Pull complete 
+ b90627b8f429 Pull complete 
+ 79ee62bd97d1 Downloading [====>                                              ]  10.49MB/113MB
+ 79ee62bd97d1 Downloading [======>                                            ]  14.68MB/113MB
+ 79ee62bd97d1 Downloading [========>                                          ]  18.87MB/113MB
+ 79ee62bd97d1 Downloading [=========>                                         ]  22.02MB/113MB
+ 79ee62bd97d1 Downloading [===========>                                       ]  25.17MB/113MB
+ 79ee62bd97d1 Downloading [=============>                                     ]  30.41MB/113MB
+ 79ee62bd97d1 Downloading [===============>                                   ]   34.6MB/113MB
+ 79ee62bd97d1 Downloading [=================>                                 ]   38.8MB/113MB
+ 79ee62bd97d1 Downloading [==================>                                ]  41.94MB/113MB
+ 79ee62bd97d1 Downloading [====================>                              ]  46.14MB/113MB
+ 79ee62bd97d1 Downloading [=====================>                             ]  49.28MB/113MB
+ 79ee62bd97d1 Downloading [=======================>                           ]  53.48MB/113MB
+ 79ee62bd97d1 Downloading [=========================>                         ]  56.62MB/113MB
+ 79ee62bd97d1 Downloading [==========================>                        ]  59.77MB/113MB
+ 79ee62bd97d1 Downloading [============================>                      ]  63.96MB/113MB
+ 79ee62bd97d1 Downloading [==============================>                    ]  68.16MB/113MB
+ 79ee62bd97d1 Downloading [================================>                  ]  72.35MB/113MB
+ 79ee62bd97d1 Downloading [=================================>                 ]   75.5MB/113MB
+ 79ee62bd97d1 Downloading [===================================>               ]  79.69MB/113MB
+ 79ee62bd97d1 Downloading [====================================>              ]  82.84MB/113MB
+ 79ee62bd97d1 Downloading [======================================>            ]  87.03MB/113MB
+ 79ee62bd97d1 Downloading [=======================================>           ]  90.18MB/113MB
+ 79ee62bd97d1 Downloading [=========================================>         ]  94.37MB/113MB
+ 79ee62bd97d1 Downloading [===========================================>       ]  97.52MB/113MB
+ 79ee62bd97d1 Downloading [=============================================>     ]  101.7MB/113MB
+ 79ee62bd97d1 Downloading [==============================================>    ]  104.9MB/113MB
+ 79ee62bd97d1 Downloading [================================================>  ]  109.1MB/113MB
+ 79ee62bd97d1 Downloading [==================================================>]    113MB/113MB
+ 79ee62bd97d1 Download complete 
+ 79ee62bd97d1 Extracting 1 s
+ 79ee62bd97d1 Extracting 1 s
+ 79ee62bd97d1 Extracting 1 s
+ 79ee62bd97d1 Extracting 1 s
+ 79ee62bd97d1 Extracting 1 s
+ 79ee62bd97d1 Extracting 1 s
+ 79ee62bd97d1 Extracting 1 s
+ 79ee62bd97d1 Extracting 1 s
+ 79ee62bd97d1 Extracting 1 s
+ 79ee62bd97d1 Extracting 1 s
+ 63ede06b07d4 Pull complete 
+ b6bb37a1d892 Pull complete 
+ 24eb2c2398c2 Pull complete 
+ a0b9759db243 Pull complete 
+ 79ee62bd97d1 Pull complete 
+ db Pulled 
+ Network vulnerable_default  Creating
+ Network vulnerable_default  Created
+ Volume vulnerable_claims-db  Creating
+ Volume vulnerable_claims-db  Created
+ Container vulnerable-db-1  Creating
+ Container vulnerable-db-1  Created
+ Container vulnerable-db-1  Starting
+ Container vulnerable-db-1  Started

@@ -1,0 +1,7 @@
+ id | username |   role   | manager_id |          password_hash           
+----+----------+----------+------------+----------------------------------
+  1 | bob      | manager  |            | 2acba7f51acfd4fd5102ad090fc612ee
+  2 | alice    | employee |          1 | 7abdccbea8473767e91378e37850d296
+  3 | carol    | finance  |            | 35d9b8a73dad4919a46dfed32701f481
+(3 rows)
+
