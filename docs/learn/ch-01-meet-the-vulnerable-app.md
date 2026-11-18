@@ -185,7 +185,88 @@ Evidence:
   ```
 
 **See the A04 flaw for yourself.** On macOS, `md5 -s alice123` prints `7abdccbea8473767e91378e37850d296`, exactly alice's stored hash, on any machine, every time. The same password always gives the same unsalted MD5 hash, which is why attackers can look such hashes up in precomputed tables instead of cracking them.
-3. Add the endpoints, including the planted flaws (*planned*)
+### Step 3: Add the endpoints, including the planted flaws
+
+This step is built in three parts, so that each flaw is understood before it is attacked in Step 5:
+
+| Part | Endpoints | Flaws planted |
+| --- | --- | --- |
+| **3a** | Login and "who am I" | A04 hard-coded signing key, A07 tokens that never expire, A10 a token check that fails open |
+| 3b | Submit, list with search, view one claim | A05 SQL injection, A01 any user can read any claim, A02 debug and CORS misconfiguration (*planned*) |
+| 3c | Approve, pay, import | A06 a manager can approve his own claim, A08 unsafe deserialization, A09 no audit log (*planned*) |
+
+#### Step 3a: Login and access tokens
+
+Why: almost every other attack in this chapter depends on *who the app thinks you are*. That identity lives in an access token, so the token is the first thing to understand, and the first thing to break.
+
+**Concepts**
+
+- **A JWT (JSON Web Token)** is three base64-encoded parts joined by dots: `header.payload.signature`. The payload holds *claims* such as `{"sub": "2", "role": "employee"}`, meaning "this is user 2, an employee".
+- **Signed, not encrypted.** Anyone holding a token can read its payload; base64 is an encoding, not a secret. What the signature provides is *tamper-evidence*: change one character of the payload and the signature no longer matches. So a JWT is only as trustworthy as (1) the secrecy of the signing key and (2) the code that checks the signature.
+- **HS256** signs with one shared secret key. Whoever knows the key can create valid tokens for any user.
+- **Bearer token:** the client sends `Authorization: Bearer <token>` with every request. "Bearer" means whoever *holds* the token is treated as its owner, like cash.
+- **FastAPI dependencies:** `Depends(get_current_user)` makes FastAPI run that function before the endpoint and pass in its result. Every protected endpoint will use it, which is why a flaw inside it affects the whole app.
+
+**The files**
+
+| File | What changed |
+| --- | --- |
+| `app/auth.py` | New: `POST /auth/login`, `GET /auth/me`, token creation and checking, **three planted flaws** |
+| `app/db.py` | Adds `get_db`, which gives each request its own database session and always closes it |
+| `app/main.py` | Registers the auth endpoints |
+| `requirements.txt` | Adds `pyjwt` |
+| `tests/conftest.py` | Shared setup: every test starts from freshly seeded data |
+| `tests/test_auth.py` | Login works, wrong passwords are refused, `/auth/me` identifies the user, and missing tokens are refused |
+
+**The planted flaws**, each marked `PLANTED FLAW` in [`app/auth.py`](../../apps/vulnerable/app/auth.py):
+
+| OWASP 2025 | The flaw | Why a real developer might write it | What an attacker gains |
+| --- | --- | --- | --- |
+| A04 Cryptographic Failures | Signing key hard-coded in source as `"changeme"` | Placeholder from the first prototype, never replaced | Anyone who reads the code, or guesses the word, can sign tokens as any user |
+| A07 Authentication Failures | Tokens have no expiry (`exp`) | Expiry was annoying during testing | A token stolen once works forever |
+| A10 Mishandling of Exceptional Conditions | If the signature check fails, the code reads the token *without* checking it | A "temporary" workaround while debugging | A token signed with *any* key, or none, is accepted |
+
+**Notice what the tests say:** they all pass. They check that login *works*, not that it is *safe*. That gap is exactly what Chapter 2 starts to close.
+
+**Notice what the library says:** running the tests prints `InsecureKeyLengthWarning: The HMAC key is 8 bytes long`. PyJWT itself warned about the A04 flaw, and the test run still passed. In real projects, warnings like this scroll past unread every day.
+
+**Notice what Gitleaks says:** nothing. `"changeme"` is too short and too ordinary to look like a secret, so the secret scanner from Chapter 0 misses it. Not every hard-coded secret looks like a secret; Chapter 2 adds a code scanner that catches it by *where* it is used.
+
+**Run it.** From `apps/vulnerable`, with the virtual environment active:
+
+```bash
+pwd
+pip install -r requirements-dev.txt
+pytest -q 2>&1 | tee ../../docs/evidence/ch-01/01-03a-pytest.txt
+uvicorn app.main:app --port 8000
+```
+
+Expected: `7 passed`, with three `InsecureKeyLengthWarning` lines. Leave the server running. In a second terminal, from the repository root, log in as alice and read the token you get back:
+
+```bash
+curl -s -X POST http://localhost:8000/auth/login -H "Content-Type: application/json" -d '{"username": "alice", "password": "alice123"}' | tee docs/evidence/ch-01/01-03a-login.txt
+```
+
+Then decode the payload locally (never paste real tokens into websites):
+
+```bash
+python3 -c "import json,base64,sys; t=json.load(open('docs/evidence/ch-01/01-03a-login.txt'))['access_token']; p=t.split('.')[1]; print(base64.urlsafe_b64decode(p + '=' * (-len(p) % 4)).decode())" | tee docs/evidence/ch-01/01-03a-token-payload.txt
+```
+
+Expected: `{"sub":"2","role":"employee"}`. That is user 2, alice, readable by anyone, and with no `exp` field: it never expires.
+
+Evidence:
+
+- The tests passed with the library's own warning ([raw](../evidence/ch-01/01-03a-pytest.txt)): `7 passed, 3 warnings`, each warning an `InsecureKeyLengthWarning`.
+- Swagger UI now lists the two new endpoints under `auth`:
+
+  ![Swagger UI for version 0.2.0, showing POST /auth/login and GET /auth/me under auth, and GET /health under default](../evidence/ch-01/01-03a-swagger-auth.png)
+
+- Login returned a bearer token ([raw](../evidence/ch-01/01-03a-login.txt)). The signature part is redacted in the saved file; see the note below.
+- The decoded payload ([raw](../evidence/ch-01/01-03a-token-payload.txt)) is `{"sub":"2","role":"employee"}`: no `exp` claim, so nothing in the token says when it stops working.
+
+> **Why the signature is redacted.** Before committing, a Gitleaks scan of the saved login response flagged it (rule `jwt`); the pre-commit hook would have blocked the commit. It was right to: this token has no expiry and is signed with the hard-coded key, so committing it would publish a credential that works for as long as the app runs. It only works against a local lab, but the habit matters more than the risk. The fix is to keep the parts that teach something (header and payload) and replace the signature, not to bypass the hook. This is also the first time the Chapter 0 secret scanner caught something real.
+
 4. Package it as a container and run it in the cluster (*planned*)
 5. Attack it by hand: ten OWASP categories (*planned*)
 6. Add a basic pipeline that stays green anyway (*planned*)

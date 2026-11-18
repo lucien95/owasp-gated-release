@@ -2,7 +2,10 @@
 
 from fastapi import FastAPI
 
-app = FastAPI(title="Expense Claims API (vulnerable)", version="0.1.0")
+from app import auth
+
+app = FastAPI(title="Expense Claims API (vulnerable)", version="0.2.0")
+app.include_router(auth.router)
 
 
 @app.get("/health")

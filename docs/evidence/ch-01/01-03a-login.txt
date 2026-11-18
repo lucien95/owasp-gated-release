@@ -1,0 +1,1 @@
+{"access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwicm9sZSI6ImVtcGxveWVlIn0.<signature-redacted>", "token_type": "bearer"}

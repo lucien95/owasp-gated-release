@@ -16,3 +16,12 @@ SessionLocal = sessionmaker(bind=engine)
 
 class Base(DeclarativeBase):
     """Every table class inherits from this, so SQLAlchemy can find them all."""
+
+
+def get_db():
+    """Give each request its own database session, and always close it afterwards."""
+    session = SessionLocal()
+    try:
+        yield session
+    finally:
+        session.close()
