@@ -193,7 +193,7 @@ This step is built in three parts, so that each flaw is understood before it is 
 | --- | --- | --- |
 | **3a** | Login and "who am I" | A04 hard-coded signing key, A07 tokens that never expire, A10 a token check that fails open |
 | **3b** | Submit, list with a status filter, view one claim | A05 SQL injection, A01 any user can read any claim, A02 debug mode that leaks stack traces |
-| 3c | Approve, pay, import | A06 a manager can approve his own claim, A08 unsafe deserialization, A09 no audit log (*planned*) |
+| **3c** | Approve, pay, import | A06 a manager can approve his own claim, A08 unsafe deserialization, A09 no audit log |
 
 #### Step 3a: Login and access tokens
 
@@ -319,6 +319,57 @@ Evidence:
 
 1. **`docker compose up -d` from the repository root** failed with `no configuration file provided: not found`. Compose only reads `compose.yaml` from the current folder, and that file lives in `apps/vulnerable`. Fix: `cd apps/vulnerable`, then check with `pwd`.
 2. **`uvicorn` failed with `[Errno 48] address already in use`.** The Step 3a server was still running in another terminal, still serving version `0.2.0` without the new endpoints, because uvicorn loads the code once at startup. Find the owner of the port with `lsof -P -i :8000`, stop the row in state `LISTEN` (Ctrl+C in its terminal, or `kill <PID>`), then start the server again. Rows in other states are clients, not the server; leave them alone.
+
+#### Step 3c: Approving, paying and importing
+
+Why: this is where money moves. The flaws here are not typos in one line; they are rules the design never had, data the code trusts too much, and evidence that is never written down.
+
+**Concepts**
+
+- **Separation of duties.** The person who asks for money must not be the person who approves it. A role check ("is this user a manager?") is not enough: the rule is about the *relationship* between the approver and the claim. This is the same mistake as the IDOR in Step 3b, one level up: the code checks *who you are*, never *whether this is yours to act on*.
+- **Insecure design (A06) vs a coding bug.** A bug is code that does not do what the design says. Insecure design is when the design itself is missing a rule. No amount of careful coding adds a rule nobody wrote down; it has to be found in design review or threat modelling. Our own [threat model v0.1](../threat-model.md) missed this one: it concentrates on the pipeline and the cluster, and lists no business-logic threats for the app. That gap is recorded here on purpose, and the threat model gains an app-logic section in a later revision.
+- **Deserialization.** Turning bytes back into objects. Formats like JSON can only describe data. Python's `pickle` can describe *instructions*: a pickle can say "to rebuild me, run this function with these arguments". `pickle.loads` follows those instructions. Reading an untrusted pickle is the same as running an untrusted program.
+- **Audit logging.** An audit log answers, after the fact: *who did what, to which record, when, and from where.* Without it, a fraudulent approval looks identical to a real one, and nobody can tell how far an attacker got. The web server's access log does not count: it records the URL, not the user.
+
+**The files**
+
+| File | What changed |
+| --- | --- |
+| `app/claims.py` | Adds `POST /claims/{id}/approve` (managers) and `POST /claims/{id}/pay` (finance), **two planted flaws** |
+| `app/imports.py` | New: `POST /claims/import` (finance) reads an export from the "old expense system", **one planted flaw** |
+| `app/main.py` | Registers the import endpoint, version `0.4.0` |
+| `tests/test_workflow.py` | A manager approves a team claim; an employee cannot approve; finance pays an approved claim; an unapproved claim cannot be paid; finance imports claims |
+
+**The planted flaws**, each marked `PLANTED FLAW`:
+
+| OWASP 2025 | What is wrong | Realistic reason it slipped in | What an attacker can do |
+| --- | --- | --- | --- |
+| A06 Insecure Design | `approve` checks the approver's role, but not that the claim belongs to someone else, or to their team | The requirement said "managers approve claims", and nobody asked "whose?" | A manager approves and gets paid for his own expenses |
+| A08 Software or Data Integrity Failures | `import` reads the upload with `pickle.loads` | The old system exported pickles, and this was the quickest way to read them | Run any command on the server, as the app's user |
+| A09 Security Logging and Alerting Failures | `approve` and `pay` record nothing about who did what | Logging was "for later" | Fraud leaves no trail; an incident cannot be investigated |
+
+**Notice what the tests say:** all 16 pass. `test_manager_approves_a_team_claim` proves approvals work. No test asks bob to approve *his own* claim, because the design never said he shouldn't.
+
+**Notice how the flaws chain.** The import is finance-only, which sounds safe. But Step 3a's flaws let anyone forge a token with `"role": "finance"`, so the A08 flaw is reachable by any user at all. One flaw rarely ends an attack; it opens the door to the next.
+
+**Notice what a 500 error means here.** When the import is attacked, the request fails with an error, and the attacker's command has *already run*. `pickle.loads` executed it before the code tried to use the result. An error response does not mean an attack failed.
+
+**Run it.** From `apps/vulnerable`, with the virtual environment active (stop any running server with Ctrl+C first):
+
+```bash
+pwd
+pytest -q 2>&1 | tee ../../docs/evidence/ch-01/01-03c-pytest.txt
+uvicorn app.main:app --port 8000
+```
+
+Expected: `16 passed`. As before, the attacks wait for Step 5.
+
+Evidence:
+
+- All 16 tests passed against the real PostgreSQL container ([raw](../evidence/ch-01/01-03c-pytest.txt)). The `InsecureKeyLengthWarning` count has grown to 21, one or two per test that logs in: a warning that repeats on every run is a warning nobody reads.
+- Swagger UI now shows version `0.4.0` with import, approve and pay:
+
+  ![Swagger UI for version 0.4.0, showing POST /claims/import, POST /claims/{claim_id}/approve and POST /claims/{claim_id}/pay alongside the earlier claims endpoints](../evidence/ch-01/01-03c-swagger-workflow.png)
 
 4. Package it as a container and run it in the cluster (*planned*)
 5. Attack it by hand: ten OWASP categories (*planned*)

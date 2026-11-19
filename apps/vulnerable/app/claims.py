@@ -1,4 +1,4 @@
-"""Claims: submit a claim, list your claims, view one claim. VULNERABLE on purpose."""
+"""Claims: submit, list, view, approve and pay. VULNERABLE on purpose; flaws are marked below."""
 
 from decimal import Decimal
 
@@ -68,4 +68,50 @@ def view_claim(
     if claim is None:
         raise HTTPException(status_code=404, detail="Claim not found")
     # PLANTED FLAW (A01:2025 Broken Access Control): checks that you are logged in, never that the claim is yours.
+    return to_dict(claim)
+
+
+@router.post("/{claim_id}/approve")
+def approve_claim(
+    claim_id: int,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    if user.role != "manager":
+        raise HTTPException(status_code=403, detail="Only managers can approve claims")
+    claim = db.get(Claim, claim_id)
+    if claim is None:
+        raise HTTPException(status_code=404, detail="Claim not found")
+    if claim.status != "submitted":
+        raise HTTPException(status_code=409, detail=f"Claim is already {claim.status}")
+    # PLANTED FLAW (A06:2025 Insecure Design): the design checks the approver's ROLE,
+    # but has no rule that you cannot approve your OWN claim, or a claim from outside
+    # your team. Separation of duties was never part of the design, so a manager can
+    # approve his own expenses.
+    claim.status = "approved"
+    claim.approved_by = user.id
+    db.commit()
+    # PLANTED FLAW (A09:2025 Security Logging and Alerting Failures): money is about to
+    # move and nothing records who approved what, when, or from where. The server's
+    # access log shows only "POST /claims/3/approve 200", with no user.
+    return to_dict(claim)
+
+
+@router.post("/{claim_id}/pay")
+def pay_claim(
+    claim_id: int,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    if user.role != "finance":
+        raise HTTPException(status_code=403, detail="Only finance can pay claims")
+    claim = db.get(Claim, claim_id)
+    if claim is None:
+        raise HTTPException(status_code=404, detail="Claim not found")
+    if claim.status != "approved":
+        raise HTTPException(status_code=409, detail="Only approved claims can be paid")
+    claim.status = "paid"
+    claim.paid_by = user.id
+    db.commit()
+    # Same A09 gap as approve_claim: the payment leaves no audit record.
     return to_dict(claim)
