@@ -2,6 +2,31 @@
 
 One entry per working session, newest first. What we set out to do, what happened, including what broke, and what comes next.
 
+## 2026-11-17 to 2026-11-18: Session 3, Chapter 1 Steps 1 to 3b
+
+**Goal:** Build the vulnerable expense-claims API one slice at a time, planting each flaw on purpose.
+
+**Done**
+- Step 1: FastAPI skeleton with `/health` and its first test
+- Step 2: PostgreSQL 18 in Docker Compose (bound to `127.0.0.1` only), `users` and `claims` tables, seed data; planted A04 (unsalted MD5 passwords)
+- Step 3a: login and `/auth/me` with JWTs; planted A04 (hard-coded signing key), A07 (no token expiry), A10 (token check fails open)
+- Step 3b: submit, list and view claims; planted A05 (SQL injection), A01 (any user reads any claim), A02 (debug mode leaks stack traces)
+- 11 tests pass against the real database, none of them hostile: every flaw ships green
+
+**Decisions**
+- [ADR-0006](adr/0006-vulnerable-and-hardened-as-side-by-side-folders.md): vulnerable and hardened apps live side by side in `apps/`
+- [ADR-0007](adr/0007-vulnerable-app-as-known-bad-fixture.md): the vulnerable app is a known-bad fixture with inverted expectations
+- Step 3 split into 3a, 3b and 3c so each flaw is understood before it is attacked
+- A wildcard CORS policy was dropped as a planted flaw: with bearer tokens it is a scanner finding with almost no attack behind it (reasoning on the Chapter 1 page)
+
+**What broke**
+- Commands run from the repository root instead of `apps/vulnerable` (twice: `pip`, then `docker compose`)
+- `ModuleNotFoundError: No module named 'app'` with plain `pytest`; fixed with `pytest.ini`. Lesson: verify with exactly the command you document
+- Gitleaks flagged a saved login response holding a real, non-expiring token; the signature was redacted instead of bypassing the hook
+- `uvicorn` could not bind port 8000 because the previous server was still running old code; found with `lsof -P -i :8000`
+
+**Next:** Step 3c (approve, pay, import: A06, A08, A09), then the container image (A03), then attack every flaw by hand on camera.
+
 ## 2026-10-22: Session 2, Chapter 0 built
 
 **Goal:** Protect the repository, create the local cluster, and write the threat model.
